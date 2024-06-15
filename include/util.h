@@ -33,6 +33,8 @@ uint32_t read_uint32(uint8_t* buf) ;
 uint16_t read_uint16(uint8_t* buf) ;
 int32_t read_int32(uint8_t* buf) ;
 int16_t read_int16(uint8_t* buf) ;
+uint32_t parseWord(FILE* fp);
+uint32_t* parseBlock(FILE* fp, uint32_t* origin, uint32_t* size);
 
 #if DEBUG_LEVEL >= 1 
 #define dprintf(...) \

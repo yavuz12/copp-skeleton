@@ -18,33 +18,56 @@ ijvm* init_ijvm(char *binary_path, FILE* input , FILE* output)
   m->out = output;
   
   // TODO: implement me
-
+  FILE* fp = fopen(binary_path ,"rb");
+  m->magicNum = parseWord(fp );
+  d2printf("magicNum: %d\n",m->magicNum);
+  m->cpData = parseBlock(fp , &m->cpOrigin, &m->cpSize);
+  d2printf("cpOrigin: %d\n",m->cpOrigin);
+  d2printf("cpSize: %d\n",m->cpSize);
+  m->txtData = parseBlock(fp , &m->txtOrigin, &m->txtSize);
+  fclose(fp);
+  d2printf("m->txtOrigin: %d\n",m->txtOrigin);
+  d2printf("m->txtSize: %d\n",m->txtSize);
   return m;
+
 }
 
 void destroy_ijvm(ijvm* m) 
 {
   // TODO: implement me
-
+  free(m->cpData);
+  free(m->txtData);
   free(m); // free memory for struct
+
 }
 
 byte_t *get_text(ijvm* m) 
 {
   // TODO: implement me
+  byte_t* byteTxt= (byte_t *) malloc(m->txtSize);;
+  memcpy(byteTxt,m->txtData,m->txtSize);
+  d2printf("Get Text  Function: %x\n",byteTxt);
   return NULL;
+
 }
 
 unsigned int get_text_size(ijvm* m) 
 {
   // TODO: implement me
-  return 0;
+  int size = m->txtSize;
+  d2printf("Text Size Function: %d\n",size);
+  return size;
+
 }
 
 word_t get_constant(ijvm* m,int i) 
 {
   // TODO: implement me
-  return 0;
+  word_t wantedConst = m->cpData[i];
+  wantedConst = swap_uint32(wantedConst);
+  d2printf("Constant Function: %d\n",wantedConst);
+  return wantedConst;
+
 }
 
 unsigned int get_program_counter(ijvm* m) 
