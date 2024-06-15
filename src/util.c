@@ -47,20 +47,19 @@ uint32_t parseWord(FILE* fp) {
   uint8_t numbuf[4];
   fread(numbuf, sizeof(uint8_t), 4, fp);
   word = read_uint32(numbuf);
-  word = swap_uint32(word);
   return word;
 }
 
 uint32_t* parseBlock(FILE* fp, uint32_t* origin, uint32_t* size) {
 
   *origin = parseWord(fp);
+  *origin = swap_uint32(*origin);
   *size = parseWord(fp);
+  *size = swap_uint32(*size);
   uint32_t* wordArray = (uint32_t *) malloc(*size);
 
-  uint8_t numbuf[4];
-  for(int i = 0; i<(*size)/4; i++){
-    fread(numbuf, sizeof(uint8_t), 4, fp);
-    wordArray[i] = read_uint32(numbuf);
+  for(int i = 0; i < *size/4; i++){
+    wordArray[i] = parseWord(fp);
   }
 
   return wordArray;
