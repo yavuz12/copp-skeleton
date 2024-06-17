@@ -23,6 +23,7 @@ ijvm* init_ijvm(char *binary_path, FILE* input , FILE* output)
   if(!checkMagicNum(m,fp)) return NULL;
   parseBlocks(m, fp);
   fclose(fp);
+
   setStack(m);
 
   return m;
@@ -42,10 +43,9 @@ void destroy_ijvm(ijvm* m)
 byte_t *get_text(ijvm* m) 
 {
   // TODO: implement me
-  byte_t* byteTxt= (byte_t *) malloc(m->txtSize);
+  byte_t* byteTxt = (byte_t *) malloc(m->txtSize);
   memcpy(byteTxt,m->txtData,m->txtSize);
   return byteTxt;
-
 }
 
 unsigned int get_text_size(ijvm* m) 
@@ -53,19 +53,14 @@ unsigned int get_text_size(ijvm* m)
   // TODO: implement me
   int size = m->txtSize;
   return size;
-
 }
 
 word_t get_constant(ijvm* m,int i) 
 {
   // TODO: implement me
   uint8_t passer[4];
-  for(int j = 0; j<4;j++){
-    passer[j] = m->cpData[(i*4)+j];
-  }
-  word_t wantedConst = read_uint32(passer);
-  return wantedConst;
-
+  for(int j = 0; j<4;j++) passer[j] = m->cpData[(i*4)+j];
+  return read_uint32(passer);
 }
 
 unsigned int get_program_counter(ijvm* m) 
@@ -79,15 +74,13 @@ word_t tos(ijvm* m)
   // this operation should NOT pop (remove top element from stack)
   // TODO: implement me
   if(m->stack.sp == -1) return -1;
-  word_t top = m->stack.stackArray[m->stack.sp];
-  return top;
+  return m->stack.stackArray[m->stack.sp];
 }
 
 bool finished(ijvm* m) 
 {
   // TODO: implement me
-  if(m->pc == m->txtSize) return true;
-  return false;
+  return (m->pc == m->txtSize);
 }
 
 void step(ijvm* m) 
@@ -96,106 +89,101 @@ void step(ijvm* m)
   if(m->pc != m->txtSize){
     byte_t opcode = m->txtData[m->pc];
     word_t value;
-    int16_t shorgArg;
     switch(opcode){
 
-      case 0x10: //BIPUSH
+      case OP_BIPUSH:
         checkStack(m);
         m->stack.stackArray[m->stack.sp] = m->txtData[++m->pc];
         break;
         
-      case 0x59: //DUP
+      case OP_DUP:
         checkStack(m);
         m->stack.stackArray[m->stack.sp] = m->stack.stackArray[m->stack.sp - 1];
         break;
         
-      case 0x60: //IADD
+      case OP_IADD:
         m->stack.stackArray[--m->stack.sp] += m->stack.stackArray[m->stack.sp];
         break;
 
-      case 0x7E: //IAND
+      case OP_IAND:
         m->stack.stackArray[--m->stack.sp] &= m->stack.stackArray[m->stack.sp];
         break;
         
-      case 0xB0: //IOR
+      case OP_IOR:
         m->stack.stackArray[--m->stack.sp] |= m->stack.stackArray[m->stack.sp];
         break;
 
-      case 0x64: //ISUB
+      case OP_ISUB:
         m->stack.stackArray[--m->stack.sp] -= m->stack.stackArray[m->stack.sp];
         break;
 
-      case 0x00: //NOP	
+      case OP_NOP:
         break;
 
-      case 0x57: //POP
+      case OP_POP:
         assert(m->stack.sp != -1);
         m->stack.sp--;
         break;
 
-      case 0x5F: //SWAP
+      case OP_SWAP:
         value = m->stack.stackArray[m->stack.sp-1];
         m->stack.stackArray[m->stack.sp-1] = m->stack.stackArray[m->stack.sp];
         m->stack.stackArray[m->stack.sp] = value;
         break; 
 
-      case 0xFE: //ERR
+      case OP_ERR:
         fprintf(m->out, "Error\n");
         m->pc = m->txtSize -1;
         break;
 
-      case 0xFF: //HALT
+      case OP_HALT:
         m->pc = m->txtSize -1;
         break;
 
-      case 0xFC: //IN
+      case OP_IN:
         value = fgetc(m->in);
         if(value == EOF) value = 0;
         checkStack(m);
         m->stack.stackArray[m->stack.sp] = value;
         break;
 
-      case 0xFD: //OUT
+      case OP_OUT:
         value = m->stack.stackArray[m->stack.sp--];
         fprintf(m->out, "%c", value);
         break;
 
-      case 0xA7 : //GOTO
-        shorgArg = parseShortArg(m);
-        m->pc += shorgArg -3;
+      case OP_GOTO:
+        m->pc += parseShortArg(m)-3;
         break;
         
-      case 0x99 : //IFEQ
+      case OP_IFEQ:
         value = m->stack.stackArray[m->stack.sp--];
-        shorgArg = parseShortArg(m);
-        if(value == 0) m->pc += shorgArg - 3;
+        if(value == 0) m->pc += parseShortArg(m) - 3;
         break;
 
-      case 0x9B: //IFLT
+      case OP_IFLT:
         value = m->stack.stackArray[m->stack.sp--];
-        shorgArg = parseShortArg(m);
-        if(value < 0) m->pc += shorgArg - 3; 
+        if(value < 0) m->pc += parseShortArg(m) - 3; 
         break;
 
-      case 0X9F: //IF_ICMPEQ
+      case OP_IF_ICMPEQ:
         value = m->stack.stackArray[m->stack.sp--];
-        shorgArg = parseShortArg(m);
-        if(value ==  m->stack.stackArray[m->stack.sp--]) m->pc += shorgArg - 3;
+        if(value ==  m->stack.stackArray[m->stack.sp--]) m->pc +=  parseShortArg(m) - 3;
         break;
 
-      case 0x13: //LDC_W
+      case OP_LDC_W:
         break;
         
-      case 0x15: //ILOAD	
+      case OP_ILOAD:
         break;
 
-      case 0x36: //ISTORE
+      case OP_ISTORE:
         break;
 
-      case 0x84: //IINC
+      case OP_IINC:
         break;
 
-      case 0xC4: //WIDE
+      case OP_WIDE:
         break;
 
       default:

@@ -42,12 +42,9 @@ int16_t read_int16(uint8_t* buf) {
 }
 
 uint32_t parseWord(FILE* fp) {
-
-  uint32_t word;
   uint8_t numbuf[4];
   fread(numbuf, sizeof(uint8_t), 4, fp);
-  word = read_uint32(numbuf);
-  return word;
+  return read_uint32(numbuf);
 }
 
 bool checkMagicNum(ijvm* m, FILE* fp) {
@@ -67,11 +64,10 @@ void checkStack(ijvm* m) {
 }
 
 int16_t parseShortArg(ijvm* m) {
-  int16_t shorgArg;
   int8_t passer[2];
   passer[0] = m->txtData[++m->pc];
   passer[1] = m->txtData[++m->pc];
-  return shorgArg = read_int16(passer);
+  return read_int16(passer);
 }
 
 int8_t* parseBlock(FILE* fp, uint32_t* origin, uint32_t* size, int8_t* data) {
