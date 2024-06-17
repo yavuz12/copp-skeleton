@@ -89,6 +89,7 @@ void step(ijvm* m)
   if(m->pc != m->txtSize){
     byte_t opcode = m->txtData[m->pc];
     word_t value;
+    int16_t shortArg;
     switch(opcode){
 
       case OP_BIPUSH:
@@ -157,21 +158,24 @@ void step(ijvm* m)
         break;
         
       case OP_IFEQ:
-        value = m->stack.stackArray[m->stack.sp--];
-        if(value == 0) m->pc += parseShortArg(m) - 3;
+        shortArg = parseShortArg(m);
+        if(m->stack.stackArray[m->stack.sp--] == 0) m->pc += shortArg - 3;
         break;
 
       case OP_IFLT:
-        value = m->stack.stackArray[m->stack.sp--];
-        if(value < 0) m->pc += parseShortArg(m) - 3; 
+        shortArg = parseShortArg(m);
+        if(m->stack.stackArray[m->stack.sp--] < 0) m->pc += shortArg - 3; 
         break;
 
       case OP_IF_ICMPEQ:
-        value = m->stack.stackArray[m->stack.sp--];
-        if(value ==  m->stack.stackArray[m->stack.sp--]) m->pc +=  parseShortArg(m) - 3;
+        shortArg = parseShortArg(m);
+        if(m->stack.stackArray[m->stack.sp--] ==  m->stack.stackArray[m->stack.sp--]) m->pc +=  shortArg - 3;
         break;
 
       case OP_LDC_W:
+        checkStack(m);
+        m->stack.stackArray[m->stack.sp] = get_constant(m,parseShortArg(m));
+        d2printf("Top: %x\n",m->stack.stackArray[m->stack.sp]);
         break;
         
       case OP_ILOAD:
