@@ -74,7 +74,6 @@ void test_constants_2(void)
     assert(get_constant(m,3) == -65536);
     assert(get_constant(m,4) == 2);
     assert(get_constant(m,5) == 2147483647);
-
     destroy_ijvm(m);
 }
 

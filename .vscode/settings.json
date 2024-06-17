@@ -6,6 +6,10 @@
         "ijvm_struct.h": "c",
         "memory_resource": "cpp",
         "testutil.h": "c",
-        "ijvm_types.h": "c"
+        "ijvm_types.h": "c",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "utility": "c"
     }
 }

@@ -50,17 +50,4 @@ uint32_t parseWord(FILE* fp) {
   return word;
 }
 
-uint32_t* parseBlock(FILE* fp, uint32_t* origin, uint32_t* size) {
 
-  *origin = parseWord(fp);
-  *origin = swap_uint32(*origin);
-  *size = parseWord(fp);
-  *size = swap_uint32(*size);
-  uint32_t* wordArray = (uint32_t *) malloc(*size);
-
-  for(int i = 0; i < *size/4; i++){
-    wordArray[i] = parseWord(fp);
-  }
-
-  return wordArray;
-}

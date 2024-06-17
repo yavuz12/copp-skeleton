@@ -20,12 +20,26 @@ typedef struct IJVM {
 
   uint32_t cpOrigin;
   uint32_t cpSize;
-  uint32_t* cpData;
+  int8_t* cpData;
 
   uint32_t txtOrigin;
   uint32_t txtSize;
-  uint32_t* txtData;
+  int8_t* txtData;
+
+  struct STACK {
+
+    int32_t* stackArray;
+    uint32_t stackSize;
+    int32_t sp;
+
+  } stack;
+  uint32_t pc;
+
+  
 
 } ijvm;
 
+
 #endif 
+
+
