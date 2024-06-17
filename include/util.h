@@ -34,6 +34,12 @@ uint16_t read_uint16(uint8_t* buf) ;
 int32_t read_int32(uint8_t* buf) ;
 int16_t read_int16(uint8_t* buf) ;
 uint32_t parseWord(FILE* fp);
+int16_t parseShortArg(ijvm* m);
+void checkStack(ijvm* m);
+int8_t* parseBlock(FILE* fp, uint32_t* origin, uint32_t* size, int8_t* data);
+void parseBlocks(ijvm* m, FILE* fp);
+void setStack(ijvm* m);
+bool checkMagicNum(ijvm* m, FILE* fp);
 
 #if DEBUG_LEVEL >= 1 
 #define dprintf(...) \

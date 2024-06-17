@@ -18,24 +18,25 @@ typedef struct IJVM {
   // your variables go here
   uint32_t magicNum;
 
-  uint32_t cpOrigin;
+  uint32_t cpOrigin; //cp block
   uint32_t cpSize;
   int8_t* cpData;
 
-  uint32_t txtOrigin;
+  uint32_t txtOrigin; //text block
   uint32_t txtSize;
   int8_t* txtData;
+  uint32_t pc;
 
-  struct STACK {
-
+  struct STACK { //stack structure
     int32_t* stackArray;
     uint32_t stackSize;
     int32_t sp;
-
   } stack;
-  uint32_t pc;
 
-  
+
+  uint32_t lv;
+  word_t localVar[256];
+
 
 } ijvm;
 
