@@ -27,15 +27,17 @@ typedef struct IJVM {
   int8_t* txtData;
   uint32_t pc;
 
-  struct STACK { //stack structure
-    int32_t* stackArray;
+  struct LOCALFRAME {
+    uint32_t* nextFrame;
+    word_t* stackArray;
     uint32_t stackSize;
-    int32_t sp;
-  } stack;
-
-
-  uint32_t lv;
-  word_t localVar[256];
+    word_t sp;
+    word_t returnVal;
+    uint32_t* linkPTR;
+    word_t* lvArray;  
+  };
+  struct LOCALFRAME* localFrame;
+  
 
 
 } ijvm;

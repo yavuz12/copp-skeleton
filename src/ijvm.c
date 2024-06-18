@@ -24,7 +24,7 @@ ijvm* init_ijvm(char *binary_path, FILE* input , FILE* output)
   parseBlocks(m, fp);
   fclose(fp);
 
-  setStack(m);
+  createMainFrame(m);
 
   return m;
 
@@ -35,7 +35,8 @@ void destroy_ijvm(ijvm* m)
   // TODO: implement me
   free(m->cpData);
   free(m->txtData);
-  free(m->stack.stackArray);
+  free(m->localFrame->stackArray);
+  free(m->localFrame);
   free(m); // free memory for struct
 
 }
@@ -73,8 +74,8 @@ word_t tos(ijvm* m)
 {
   // this operation should NOT pop (remove top element from stack)
   // TODO: implement me
-  if(m->stack.sp == -1) return -1;
-  return m->stack.stackArray[m->stack.sp];
+  if(m->localFrame->sp == -1) return -1;
+  return m->localFrame->stackArray[m->localFrame->sp];
 }
 
 bool finished(ijvm* m) 
@@ -83,128 +84,135 @@ bool finished(ijvm* m)
   return (m->pc == m->txtSize);
 }
 
-void step(ijvm* m) 
-{
-  // TODO: implement me
-  if(m->pc != m->txtSize){
-    byte_t opcode = m->txtData[m->pc];
-    word_t value;
-    int16_t shortArg;
-    switch(opcode){
-
-      case OP_BIPUSH:
-        checkStack(m);
-        m->stack.stackArray[m->stack.sp] = m->txtData[++m->pc];
-        break;
-        
-      case OP_DUP:
-        checkStack(m);
-        m->stack.stackArray[m->stack.sp] = m->stack.stackArray[m->stack.sp - 1];
-        break;
-        
-      case OP_IADD:
-        m->stack.stackArray[--m->stack.sp] += m->stack.stackArray[m->stack.sp];
-        break;
-
-      case OP_IAND:
-        m->stack.stackArray[--m->stack.sp] &= m->stack.stackArray[m->stack.sp];
-        break;
-        
-      case OP_IOR:
-        m->stack.stackArray[--m->stack.sp] |= m->stack.stackArray[m->stack.sp];
-        break;
-
-      case OP_ISUB:
-        m->stack.stackArray[--m->stack.sp] -= m->stack.stackArray[m->stack.sp];
-        break;
-
-      case OP_NOP:
-        break;
-
-      case OP_POP:
-        assert(m->stack.sp != -1);
-        m->stack.sp--;
-        break;
-
-      case OP_SWAP:
-        value = m->stack.stackArray[m->stack.sp-1];
-        m->stack.stackArray[m->stack.sp-1] = m->stack.stackArray[m->stack.sp];
-        m->stack.stackArray[m->stack.sp] = value;
-        break; 
-
-      case OP_ERR:
-        fprintf(m->out, "Error\n");
-        m->pc = m->txtSize -1;
-        break;
-
-      case OP_HALT:
-        m->pc = m->txtSize -1;
-        break;
-
-      case OP_IN:
-        value = fgetc(m->in);
-        if(value == EOF) value = 0;
-        checkStack(m);
-        m->stack.stackArray[m->stack.sp] = value;
-        break;
-
-      case OP_OUT:
-        value = m->stack.stackArray[m->stack.sp--];
-        fprintf(m->out, "%c", value);
-        break;
-
-      case OP_GOTO:
-        m->pc += parseShortArg(m)-3;
-        break;
-        
-      case OP_IFEQ:
-        shortArg = parseShortArg(m);
-        if(m->stack.stackArray[m->stack.sp--] == 0) m->pc += shortArg - 3;
-        break;
-
-      case OP_IFLT:
-        shortArg = parseShortArg(m);
-        if(m->stack.stackArray[m->stack.sp--] < 0) m->pc += shortArg - 3; 
-        break;
-
-      case OP_IF_ICMPEQ:
-        shortArg = parseShortArg(m);
-        if(m->stack.stackArray[m->stack.sp--] ==  m->stack.stackArray[m->stack.sp--]) m->pc +=  shortArg - 3;
-        break;
-
-      case OP_LDC_W:
-        checkStack(m);
-        m->stack.stackArray[m->stack.sp] = get_constant(m,parseShortArg(m));
-        d2printf("Top: %x\n",m->stack.stackArray[m->stack.sp]);
-        break;
-        
-      case OP_ILOAD:
-        break;
-
-      case OP_ISTORE:
-        break;
-
-      case OP_IINC:
-        break;
-
-      case OP_WIDE:
-        break;
-
-      default:
-        m->pc = m->txtSize -1;
-        break;
-
-    }
-    m->pc++;
-  }
-}
-
-
-
 word_t get_local_variable(ijvm* m, int i) 
 {
   // TODO: implement me
-  return 0;
+  return m->localFrame->lvArray[i];
+}
+
+void step(ijvm* m) 
+{
+  // TODO: implement me
+  byte_t opcode = m->txtData[m->pc];
+  word_t value;
+  byte_t byteArg;
+  int16_t shortArg;
+  switch(opcode){
+    case OP_BIPUSH:
+      checkStack(m);
+      m->localFrame->stackArray[m->localFrame->sp] = m->txtData[++m->pc];
+      break;
+        
+    case OP_DUP:
+      checkStack(m);
+      m->localFrame->stackArray[m->localFrame->sp] = m->localFrame->stackArray[m->localFrame->sp - 1];
+      break;
+        
+    case OP_IADD:
+      m->localFrame->stackArray[--m->localFrame->sp] += m->localFrame->stackArray[m->localFrame->sp];
+      break;
+
+    case OP_IAND:
+      m->localFrame->stackArray[--m->localFrame->sp] &= m->localFrame->stackArray[m->localFrame->sp];
+      break;
+        
+    case OP_IOR:
+      m->localFrame->stackArray[--m->localFrame->sp] |= m->localFrame->stackArray[m->localFrame->sp];
+      break;
+
+    case OP_ISUB:
+      m->localFrame->stackArray[--m->localFrame->sp] -= m->localFrame->stackArray[m->localFrame->sp];
+      break;
+
+    case OP_NOP:
+      break;
+
+    case OP_POP:
+      assert(m->localFrame->sp != -1);
+      m->localFrame->sp--;
+      break;
+
+    case OP_SWAP:
+      value = m->localFrame->stackArray[m->localFrame->sp-1];
+      m->localFrame->stackArray[m->localFrame->sp-1] = m->localFrame->stackArray[m->localFrame->sp];
+      m->localFrame->stackArray[m->localFrame->sp] = value;
+      break; 
+
+    case OP_ERR:
+      fprintf(m->out, "Error\n");
+      m->pc = m->txtSize - 1;
+      break;
+
+    case OP_HALT:
+      m->pc = m->txtSize - 1;
+      break;
+
+    case OP_IN:
+      value = fgetc(m->in);
+      if(value == EOF) value = 0;
+      checkStack(m);
+      m->localFrame->stackArray[m->localFrame->sp] = value;
+      break;
+
+    case OP_OUT:
+      fprintf(m->out, "%c", m->localFrame->stackArray[m->localFrame->sp--]);
+      break;
+
+    case OP_GOTO:
+      m->pc += parseShortArg(m) - 3;
+      break;
+        
+    case OP_IFEQ:
+      shortArg = parseShortArg(m);
+      if(m->localFrame->stackArray[m->localFrame->sp--] == 0) m->pc += shortArg - 3;
+      break;
+
+    case OP_IFLT:
+      shortArg = parseShortArg(m);
+      if(m->localFrame->stackArray[m->localFrame->sp--] < 0) m->pc += shortArg - 3; 
+      break;
+
+    case OP_IF_ICMPEQ:
+      shortArg = parseShortArg(m);
+      if(m->localFrame->stackArray[m->localFrame->sp--] ==  m->localFrame->stackArray[m->localFrame->sp--]) m->pc +=  shortArg - 3;
+      break;
+
+    case OP_LDC_W:
+      checkStack(m);
+      m->localFrame->stackArray[m->localFrame->sp] = get_constant(m,parseShortArg(m));  
+      break;
+        
+    case OP_ILOAD:
+      checkStack(m);
+      m->localFrame->stackArray[m->localFrame->sp] = m->localFrame->lvArray[m->txtData[++m->pc]];
+      break;
+
+    case OP_ISTORE:
+      m->localFrame->lvArray[m->txtData[++m->pc]] = m->localFrame->stackArray[m->localFrame->sp--];
+      break;
+
+    case OP_IINC:
+      byteArg = m->txtData[++m->pc];
+      m->localFrame->lvArray[byteArg] += m->txtData[++m->pc];
+      break;
+
+    case OP_WIDE:
+      caseWide(m);
+      break;
+
+    case OP_INVOKEVIRTUAL:
+      break;
+
+    case OP_IRETURN:
+      break;
+
+    default:
+      m->pc = m->txtSize -1;
+      break;
+
+    }
+    m->pc++;
+  
 }
 
 byte_t get_instruction(ijvm* m) 

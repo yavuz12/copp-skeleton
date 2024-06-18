@@ -57,9 +57,9 @@ bool checkMagicNum(ijvm* m, FILE* fp) {
 }
 
 void checkStack(ijvm* m) {
-  if(++m->stack.sp == m->stack.stackSize){
-    m->stack.stackSize *= 2;
-    m->stack.stackArray = (int *) realloc(m->stack.stackArray, sizeof(int32_t) * m->stack.stackSize);
+  if(++m->localFrame->sp == m->localFrame->stackSize){
+    m->localFrame->stackSize *= 2;
+    m->localFrame->stackArray = (int *) realloc(m->localFrame->stackArray, sizeof(int32_t) * m->localFrame->stackSize);
   }
 }
 
@@ -68,6 +68,13 @@ int16_t parseShortArg(ijvm* m) {
   passer[0] = m->txtData[++m->pc];
   passer[1] = m->txtData[++m->pc];
   return read_int16(passer);
+}
+
+uint16_t parseUShortArg(ijvm* m) {
+  uint8_t passer[2];
+  passer[0] = m->txtData[++m->pc];
+  passer[1] = m->txtData[++m->pc];
+  return read_uint16(passer);
 }
 
 int8_t* parseBlock(FILE* fp, uint32_t* origin, uint32_t* size, int8_t* data) {
@@ -88,9 +95,55 @@ void parseBlocks(ijvm* m, FILE* fp) {
   m->txtData = parseBlock(fp,&m->txtOrigin,&m->txtSize,&m->txtData);
 }
 
-void setStack(ijvm* m) {
-  m->stack.sp = -1;
-  m->stack.stackSize = 10;
-  m->stack.stackArray = (int32_t *) malloc(m->stack.stackSize * sizeof(int32_t));
+void createMainFrame(ijvm* m) {
+  m->localFrame = (struct LOCALFRAME*)malloc(sizeof(struct LOCALFRAME));
+  m->localFrame->sp = -1;
+  m->localFrame->stackSize = 10;
+  m->localFrame->stackArray = (word_t *) malloc(m->localFrame->stackSize * sizeof(word_t));
+  m->localFrame->linkPTR = NULL;
+  m->localFrame->nextFrame = NULL;
+  m->localFrame->lvArray = (word_t *) malloc(256 * sizeof(word_t));
 }
 
+void caseWide(ijvm* m) {
+  byte_t opcode = m->txtData[++m->pc];
+  word_t value;
+  uint16_t shortArg;
+  switch(opcode){
+    case OP_ILOAD:
+      checkStack(m);
+      shortArg = parseUShortArg(m);
+      m->localFrame->stackArray[m->localFrame->sp] = m->localFrame->lvArray[shortArg];
+      break;
+
+    case OP_ISTORE:
+      shortArg = parseUShortArg(m);
+      m->localFrame->lvArray[shortArg] = m->localFrame->stackArray[m->localFrame->sp--];
+      break;
+
+    case OP_IINC:
+      shortArg = parseUShortArg(m);
+      m->localFrame->lvArray[shortArg] += m->txtData[++m->pc];
+      break;
+
+    case OP_HALT:
+      m->pc = m->txtSize - 1; 
+      break;
+
+    case OP_ERR:
+      fprintf(m->out, "Error\n");
+      m->pc = m->txtSize - 1; 
+      break;
+
+    default:
+      m->pc = m->txtSize -1;
+      break;
+
+
+  }
+
+}
+
+struct LOCALFRAME* setCurrFrame(ijvm* m) {
+
+}
