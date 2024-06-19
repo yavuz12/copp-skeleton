@@ -36,12 +36,16 @@ int16_t read_int16(uint8_t* buf) ;
 uint32_t parseWord(FILE* fp);
 uint16_t parseUShortArg(ijvm* m);
 int16_t parseShortArg(ijvm* m);
-void checkStack(ijvm* m);
 int8_t* parseBlock(FILE* fp, uint32_t* origin, uint32_t* size, int8_t* data);
 void parseBlocks(ijvm* m, FILE* fp);
 bool checkMagicNum(ijvm* m, FILE* fp);
+void createMainFrame(ijvm* m);
+void setCurrFrame(ijvm* m);
+void checkStack(ijvm* m);
 void caseWide(ijvm* m);
-struct LOCALFRAME* setCurrFrame(ijvm* m);
+void transferArgs(ijvm* m, int16_t argNum,uint32_t prevPC);
+void returnLastFrame(ijvm* m);
+uint16_t parseLVArgs(ijvm* m);
 
 
 #if DEBUG_LEVEL >= 1 

@@ -17,33 +17,33 @@ void exit(int __status) ;
 typedef void (*exit_handle)(int);
 typedef void *(*malloc_handle)(size_t size);
 
-void * malloc(size_t size)
-{
-  static malloc_handle _orig_malloc;
-  if (!_orig_malloc)
-    _orig_malloc = (malloc_handle)dlsym(RTLD_NEXT, "malloc");
-  void* mem = _orig_malloc(size);
-  // set memory to 0xFF to catch use of uninitialized memory
-  memset(mem, 0xFF, size);
-  return mem;
-}
+// void * malloc(size_t size)
+// {
+//   static malloc_handle _orig_malloc;
+//   if (!_orig_malloc)
+//     _orig_malloc = (malloc_handle)dlsym(RTLD_NEXT, "malloc");
+//   void* mem = _orig_malloc(size);
+//   // set memory to 0xFF to catch use of uninitialized memory
+//   memset(mem, 0xFF, size);
+//   return mem;
+// }
 
 
-void exit(int __status)
-{
-  static exit_handle _orig_exit;
-  if (!_orig_exit)
-    _orig_exit = (exit_handle)dlsym(RTLD_NEXT, "exit");
-  if(__status == 0){
-    fprintf(stderr, "ALERT! INVALID USE OF EXIT() DETECTED. "
-                  "You risk a failing grade if you submit "
-                  "with exit(0) in your code.\n");
-    abort();
-  } else {
-   _orig_exit(__status);
-  }
-  abort();
-}
+// void exit(int __status)
+// {
+//   static exit_handle _orig_exit;
+//   if (!_orig_exit)
+//     _orig_exit = (exit_handle)dlsym(RTLD_NEXT, "exit");
+//   if(__status == 0){
+//     fprintf(stderr, "ALERT! INVALID USE OF EXIT() DETECTED. "
+//                   "You risk a failing grade if you submit "
+//                   "with exit(0) in your code.\n");
+//     abort();
+//   } else {
+//    _orig_exit(__status);
+//   }
+//   abort();
+// }
 
 
 // Disable abort on err using -DABORT_ON_ERR=0

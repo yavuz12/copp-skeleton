@@ -18,25 +18,22 @@ typedef struct IJVM {
   // your variables go here
   uint32_t magicNum;
 
-  uint32_t cpOrigin; //cp block
-  uint32_t cpSize;
+  uint32_t cpOrigin, cpSize; //cp block
   int8_t* cpData;
 
-  uint32_t txtOrigin; //text block
-  uint32_t txtSize;
+  uint32_t txtOrigin, txtSize; //text block
   int8_t* txtData;
-  uint32_t pc;
 
   struct LOCALFRAME {
-    uint32_t* nextFrame;
+    struct LOCALFRAME* nextFrame; 
     word_t* stackArray;
-    uint32_t stackSize;
+    word_t* lvArray; 
+    uint32_t stackSize, pc;
+    uint16_t lvSize;
     word_t sp;
-    word_t returnVal;
-    uint32_t* linkPTR;
-    word_t* lvArray;  
   };
-  struct LOCALFRAME* localFrame;
+  struct LOCALFRAME* mainFrame;
+  struct LOCALFRAME* lv; //last frame
   
 
 

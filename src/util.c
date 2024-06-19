@@ -32,7 +32,6 @@ uint16_t read_uint16(uint8_t *buf)
   return (uint16_t)((uint16_t)buf[0] << 8) | (uint16_t)buf[1];
 }
 
-
 int32_t read_int32(uint8_t* buf) {
   return (int32_t) read_uint32(buf);
 }
@@ -57,23 +56,23 @@ bool checkMagicNum(ijvm* m, FILE* fp) {
 }
 
 void checkStack(ijvm* m) {
-  if(++m->localFrame->sp == m->localFrame->stackSize){
-    m->localFrame->stackSize *= 2;
-    m->localFrame->stackArray = (int *) realloc(m->localFrame->stackArray, sizeof(int32_t) * m->localFrame->stackSize);
+  if(++m->lv->sp == m->lv->stackSize){
+    m->lv->stackSize *= 2;
+    m->lv->stackArray = (int *) realloc(m->lv->stackArray, sizeof(int32_t) * m->lv->stackSize);
   }
 }
 
 int16_t parseShortArg(ijvm* m) {
   int8_t passer[2];
-  passer[0] = m->txtData[++m->pc];
-  passer[1] = m->txtData[++m->pc];
+  passer[0] = m->txtData[++m->lv->pc];
+  passer[1] = m->txtData[++m->lv->pc];
   return read_int16(passer);
 }
 
 uint16_t parseUShortArg(ijvm* m) {
   uint8_t passer[2];
-  passer[0] = m->txtData[++m->pc];
-  passer[1] = m->txtData[++m->pc];
+  passer[0] = m->txtData[++m->lv->pc];
+  passer[1] = m->txtData[++m->lv->pc];
   return read_uint16(passer);
 }
 
@@ -89,61 +88,91 @@ int8_t* parseBlock(FILE* fp, uint32_t* origin, uint32_t* size, int8_t* data) {
   return data;
 }
 
+uint16_t parseLVArgs(ijvm* m) {
+  uint8_t passer[2];
+  passer[0] = m->txtData[m->lv->pc++];
+  passer[1] = m->txtData[m->lv->pc++];
+  return read_uint16(passer);
+}
+
 void parseBlocks(ijvm* m, FILE* fp) {
-  m->pc = 0;
   m->cpData = parseBlock(fp,&m->cpOrigin,&m->cpSize,&m->cpData);
   m->txtData = parseBlock(fp,&m->txtOrigin,&m->txtSize,&m->txtData);
 }
 
-void createMainFrame(ijvm* m) {
-  m->localFrame = (struct LOCALFRAME*)malloc(sizeof(struct LOCALFRAME));
-  m->localFrame->sp = -1;
-  m->localFrame->stackSize = 10;
-  m->localFrame->stackArray = (word_t *) malloc(m->localFrame->stackSize * sizeof(word_t));
-  m->localFrame->linkPTR = NULL;
-  m->localFrame->nextFrame = NULL;
-  m->localFrame->lvArray = (word_t *) malloc(256 * sizeof(word_t));
-}
-
 void caseWide(ijvm* m) {
-  byte_t opcode = m->txtData[++m->pc];
-  word_t value;
+  byte_t opcode = m->txtData[++m->lv->pc];
   uint16_t shortArg;
   switch(opcode){
     case OP_ILOAD:
       checkStack(m);
       shortArg = parseUShortArg(m);
-      m->localFrame->stackArray[m->localFrame->sp] = m->localFrame->lvArray[shortArg];
+      m->lv->stackArray[m->lv->sp] = m->lv->lvArray[shortArg];
       break;
 
     case OP_ISTORE:
       shortArg = parseUShortArg(m);
-      m->localFrame->lvArray[shortArg] = m->localFrame->stackArray[m->localFrame->sp--];
+      m->lv->lvArray[shortArg] = m->lv->stackArray[m->lv->sp--];
       break;
 
     case OP_IINC:
       shortArg = parseUShortArg(m);
-      m->localFrame->lvArray[shortArg] += m->txtData[++m->pc];
+      m->lv->lvArray[shortArg] += m->txtData[++m->lv->pc];
       break;
 
     case OP_HALT:
-      m->pc = m->txtSize - 1; 
+      m->lv->pc = m->txtSize - 1; 
       break;
 
     case OP_ERR:
       fprintf(m->out, "Error\n");
-      m->pc = m->txtSize - 1; 
+      m->lv->pc = m->txtSize - 1; 
       break;
 
     default:
-      m->pc = m->txtSize -1;
+      m->lv->pc = m->txtSize -1;
       break;
-
-
   }
+}
+
+void createMainFrame(ijvm* m) {
+  m->mainFrame = (struct LOCALFRAME*)malloc(sizeof(struct LOCALFRAME));
+  m->mainFrame->sp = -1;
+  m->mainFrame->pc = 0;
+  m->mainFrame->stackSize = 10;
+  m->mainFrame->lvSize = 256;
+  m->mainFrame->stackArray = (word_t *) malloc(m->mainFrame->stackSize * sizeof(word_t));
+  m->mainFrame->lvArray = (word_t *) malloc(m->mainFrame->lvSize * sizeof(word_t));
+  m->mainFrame->nextFrame = NULL;
+  m->lv = m->mainFrame;
+}
+
+void transferArgs(ijvm* m, int16_t argNum,uint32_t prevPC){
 
 }
 
-struct LOCALFRAME* setCurrFrame(ijvm* m) {
+void setCurrFrame(ijvm* m) {
+  uint32_t prevPC = m->lv->pc + 2;
+  uint16_t argNum, lvNum;
+  struct  LOCALFRAME* newFrame = (struct LOCALFRAME*)malloc(sizeof(struct LOCALFRAME));
+  newFrame->sp = -1;
+  newFrame->stackSize = 10;
+  newFrame->stackArray = (word_t *) malloc(newFrame->stackSize * sizeof(word_t));
+  newFrame->nextFrame = NULL;
+  m->lv->pc = get_constant(m,parseShortArg(m));
+  argNum = parseLVArgs(m);
+  lvNum = parseLVArgs(m);
+  m->lv->lvSize = argNum + lvNum;
+  newFrame->pc = m->lv->pc;
+  newFrame->lvArray = (word_t *) malloc(m->lv->lvSize * sizeof(word_t));
+  m->lv->pc = prevPC;
+  m->lv->nextFrame = newFrame;
+  m->lv = newFrame; 
+}
+
+void returnLastFrame(ijvm* m) {
 
 }
+
+
+
