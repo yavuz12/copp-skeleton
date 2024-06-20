@@ -1,5 +1,6 @@
 #include "util.h"
 #include <stdio.h>
+#include <assert.h>
 // Endianness helper functions
 
 uint32_t swap_uint32(uint32_t num)
@@ -112,7 +113,10 @@ void caseWide(ijvm* m) {
 
     case OP_ISTORE:
       shortArg = parseUShortArg(m);
-      m->lv->lvArray[shortArg] = m->lv->stackArray[m->lv->sp--];
+      assert(m->lv->sp >= 0 && m->lv->sp < m->lv->stackSize);
+      assert(shortArg >=0 && shortArg < m->lv->lvSize);
+      m->lv->lvArray[shortArg] = m->lv->stackArray[m->lv->sp];
+      m->lv->sp--;
       break;
 
     case OP_IINC:
@@ -147,8 +151,10 @@ void createMainFrame(ijvm* m) {
   m->lv = m->mainFrame;
 }
 
-void transferArgs(ijvm* m, int16_t argNum,uint32_t prevPC){
-
+void transferArgs(ijvm* m, uint16_t argNum, struct  LOCALFRAME* newFrame){
+  for(int i = 0; i < argNum; i++){
+    newFrame->lvArray[argNum - i - 1] = m->lv->stackArray[m->lv->sp - i];
+  }
 }
 
 void setCurrFrame(ijvm* m) {
@@ -162,16 +168,26 @@ void setCurrFrame(ijvm* m) {
   m->lv->pc = get_constant(m,parseShortArg(m));
   argNum = parseLVArgs(m);
   lvNum = parseLVArgs(m);
-  m->lv->lvSize = argNum + lvNum;
+  newFrame->lvSize = argNum + lvNum;
   newFrame->pc = m->lv->pc;
   newFrame->lvArray = (word_t *) malloc(m->lv->lvSize * sizeof(word_t));
   m->lv->pc = prevPC;
+  transferArgs(m,argNum,newFrame);
   m->lv->nextFrame = newFrame;
   m->lv = newFrame; 
 }
 
 void returnLastFrame(ijvm* m) {
-
+  word_t returnVal = m->lv->stackArray[m->lv->sp];
+  struct  LOCALFRAME* lastFrame = m->mainFrame;
+  while(lastFrame->nextFrame != m->lv) lastFrame = lastFrame->nextFrame;
+  lastFrame->sp -=m->lv->lvSize;
+  free(m->lv->stackArray);
+  free(m->lv->lvArray);
+  free(m->lv);
+  m->lv = lastFrame;
+  checkStack(m);
+  m->lv->stackArray[m->lv->sp] = returnVal;
 }
 
 

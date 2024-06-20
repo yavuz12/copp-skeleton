@@ -50,8 +50,7 @@ byte_t *get_text(ijvm* m)
 unsigned int get_text_size(ijvm* m) 
 {
   // TODO: implement me
-  int size = m->txtSize;
-  return size;
+  return m->txtSize;
 }
 
 word_t get_constant(ijvm* m,int i) 
@@ -72,7 +71,7 @@ word_t tos(ijvm* m)
 {
   // this operation should NOT pop (remove top element from stack)
   // TODO: implement me
-  if(m->lv->sp == -1) return -1;
+  if(m->lv->sp == -1 || m->lv->sp >= m->lv->stackSize) return -1;
   return m->lv->stackArray[m->lv->sp];
 }
 
@@ -89,7 +88,7 @@ word_t get_local_variable(ijvm* m, int i)
 }
 
 void step(ijvm* m) 
-{
+{  
   // TODO: implement me
   byte_t opcode = m->txtData[m->lv->pc];
   word_t value;
@@ -210,7 +209,6 @@ void step(ijvm* m)
     default:
       m->lv->pc = m->txtSize -1;
       break;
-
     }
     m->lv->pc++;
   
@@ -242,7 +240,14 @@ void run(ijvm* m)
 int get_call_stack_size(ijvm* m) 
 {
    // TODO: implement me if doing tail call bonus
-   return 0;
+   struct LOCALFRAME* newFrame;
+   newFrame = m->mainFrame;
+   int depth = 0;
+  while(newFrame){
+    depth++;
+    newFrame=newFrame->nextFrame;
+  }
+   return depth;
 }
 
 
