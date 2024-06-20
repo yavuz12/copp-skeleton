@@ -43,7 +43,7 @@ void createMainFrame(ijvm* m);
 void setCurrFrame(ijvm* m);
 void checkStack(ijvm* m);
 void caseWide(ijvm* m);
-void transferArgs(ijvm* m, uint16_t argNum, struct  LOCALFRAME* newFrame);
+void transferArgs(ijvm* m, uint16_t argNum, frame_t* newFrame);
 void returnLastFrame(ijvm* m);
 uint16_t parseLVArgs(ijvm* m);
 

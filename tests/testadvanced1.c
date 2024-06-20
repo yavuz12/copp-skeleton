@@ -21,7 +21,7 @@ static FILE *tmp_out(void)
 }
 
 void test_wide1(void)
-{
+{   
     FILE* output = tmp_out();
     ijvm* m = init_ijvm("files/advanced/test-wide1.ijvm",stdin,output);
     assert(m != NULL);

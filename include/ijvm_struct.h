@@ -24,16 +24,8 @@ typedef struct IJVM {
   uint32_t txtOrigin, txtSize; //text block
   int8_t* txtData;
 
-  struct LOCALFRAME {
-    struct LOCALFRAME* nextFrame; 
-    word_t* stackArray;
-    word_t* lvArray; 
-    uint32_t stackSize, pc;
-    uint16_t lvSize;
-    word_t sp;
-  };
-  struct LOCALFRAME* mainFrame;
-  struct LOCALFRAME* lv; //last frame
+  frame_t* mainFrame;
+  frame_t* lv; //last frame
   
 
 

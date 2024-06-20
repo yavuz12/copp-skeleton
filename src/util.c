@@ -113,26 +113,14 @@ void caseWide(ijvm* m) {
 
     case OP_ISTORE:
       shortArg = parseUShortArg(m);
-      assert(m->lv->sp >= 0 && m->lv->sp < m->lv->stackSize);
-      assert(shortArg >=0 && shortArg < m->lv->lvSize);
-      m->lv->lvArray[shortArg] = m->lv->stackArray[m->lv->sp];
-      m->lv->sp--;
+      m->lv->lvArray[shortArg] = m->lv->stackArray[m->lv->sp--];
       break;
 
     case OP_IINC:
       shortArg = parseUShortArg(m);
       m->lv->lvArray[shortArg] += m->txtData[++m->lv->pc];
       break;
-
-    case OP_HALT:
-      m->lv->pc = m->txtSize - 1; 
-      break;
-
-    case OP_ERR:
-      fprintf(m->out, "Error\n");
-      m->lv->pc = m->txtSize - 1; 
-      break;
-
+    
     default:
       m->lv->pc = m->txtSize -1;
       break;
@@ -140,7 +128,7 @@ void caseWide(ijvm* m) {
 }
 
 void createMainFrame(ijvm* m) {
-  m->mainFrame = (struct LOCALFRAME*)malloc(sizeof(struct LOCALFRAME));
+  m->mainFrame = (frame_t*)malloc(sizeof(frame_t));
   m->mainFrame->sp = -1;
   m->mainFrame->pc = 0;
   m->mainFrame->stackSize = 10;
@@ -151,16 +139,16 @@ void createMainFrame(ijvm* m) {
   m->lv = m->mainFrame;
 }
 
-void transferArgs(ijvm* m, uint16_t argNum, struct  LOCALFRAME* newFrame){
+void transferArgs(ijvm* m, uint16_t argNum, frame_t* newFrame){
   for(int i = 0; i < argNum; i++){
-    newFrame->lvArray[argNum - i - 1] = m->lv->stackArray[m->lv->sp - i];
+    newFrame->lvArray[argNum - i - 1] = m->lv->stackArray[m->lv->sp--];
   }
 }
 
 void setCurrFrame(ijvm* m) {
   uint32_t prevPC = m->lv->pc + 2;
   uint16_t argNum, lvNum;
-  struct  LOCALFRAME* newFrame = (struct LOCALFRAME*)malloc(sizeof(struct LOCALFRAME));
+  frame_t* newFrame = (frame_t*)malloc(sizeof(frame_t));
   newFrame->sp = -1;
   newFrame->stackSize = 10;
   newFrame->stackArray = (word_t *) malloc(newFrame->stackSize * sizeof(word_t));
@@ -170,7 +158,7 @@ void setCurrFrame(ijvm* m) {
   lvNum = parseLVArgs(m);
   newFrame->lvSize = argNum + lvNum;
   newFrame->pc = m->lv->pc;
-  newFrame->lvArray = (word_t *) malloc(m->lv->lvSize * sizeof(word_t));
+  newFrame->lvArray = (word_t *) malloc(newFrame->lvSize * sizeof(word_t));
   m->lv->pc = prevPC;
   transferArgs(m,argNum,newFrame);
   m->lv->nextFrame = newFrame;
@@ -179,9 +167,8 @@ void setCurrFrame(ijvm* m) {
 
 void returnLastFrame(ijvm* m) {
   word_t returnVal = m->lv->stackArray[m->lv->sp];
-  struct  LOCALFRAME* lastFrame = m->mainFrame;
+  frame_t* lastFrame = m->mainFrame;
   while(lastFrame->nextFrame != m->lv) lastFrame = lastFrame->nextFrame;
-  lastFrame->sp -=m->lv->lvSize;
   free(m->lv->stackArray);
   free(m->lv->lvArray);
   free(m->lv);

@@ -34,6 +34,7 @@ void destroy_ijvm(ijvm* m)
   // TODO: implement me
   free(m->cpData);
   free(m->txtData);
+  while(m->mainFrame != m->lv) returnLastFrame(m);
   free(m->mainFrame->stackArray);
   free(m->mainFrame->lvArray);
   free(m->mainFrame);
@@ -142,6 +143,8 @@ void step(ijvm* m)
 
     case OP_HALT:
       m->lv->pc = m->txtSize - 1;
+
+      
       break;
 
     case OP_IN:
@@ -204,6 +207,21 @@ void step(ijvm* m)
 
     case OP_IRETURN:
       returnLastFrame(m);
+      break;
+
+    case OP_TAILCALL:
+      break;
+
+    case OP_NEWARRAY:
+      break;
+
+    case OP_IALOAD:
+      break;
+
+    case OP_IASTORE:
+      break;
+
+    case OP_GC:
       break;
 
     default:
